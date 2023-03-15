@@ -6,6 +6,7 @@ setup(
     packages=["hwatest"],
     install_requires=[
         "Click",
+        "distro"
     ],
     entry_points={
         "console_scripts": [

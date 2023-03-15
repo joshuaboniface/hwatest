@@ -28,6 +28,7 @@ import concurrent.futures
 
 from json import dump, dumps, loads
 from time import sleep
+from distro import os_release_info
 
 test_source_files = {
     "2160p-hevc": {
@@ -229,6 +230,9 @@ def do_benchmark(ffmpeg, video_path, video_file, stream, scale, workers, gpu):
 
 def get_hwinfo(all_results):
     all_results["hwinfo"] = dict()
+
+    # Get our OS information from the distro library
+    all_results["hwinfo"]["os"] = os_release_info()
 
     # Get our information using lshw because it is the most sensible output
     cpu_output = subprocess.run(
