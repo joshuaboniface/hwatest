@@ -366,6 +366,7 @@ def benchmark(ffmpeg, video_path, gpu_idx):
 
     click.echo()
 
+    all_results["tests"] = dict()
     for stream in ffmpeg_streams.items():
         invalid_results = False
 
@@ -384,10 +385,10 @@ def benchmark(ffmpeg, video_path, gpu_idx):
             )
             or (stream_method == "qsv" and "Intel Corporation" not in supported_vendors)
         ):
-            all_results[stream_type] = None
+            all_results["tests"][stream_type] = None
             continue
 
-        all_results[stream_type] = dict()
+        all_results["tests"][stream_type] = dict()
         click.echo(f"> Running {stream_type} encoder tests")
 
         for test_source in test_source_files.items():
@@ -398,7 +399,7 @@ def benchmark(ffmpeg, video_path, gpu_idx):
             if stream_encode != source_encode:
                 continue
 
-            all_results[stream_type][source_resolution] = dict()
+            all_results["tests"][stream_type][source_resolution] = dict()
             click.echo(f'>> Running tests with source file "{source_filename}"')
 
             for scale in scaling.items():
@@ -409,7 +410,7 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                 ):
                     continue
 
-                all_results[stream_type][source_resolution][target_resolution] = dict()
+                all_results["tests"][stream_type][source_resolution][target_resolution] = dict()
                 target_text = f"{source_resolution} -> {target_scale_name}"
                 click.echo(f">>> Running {target_text} tests")
 
@@ -455,13 +456,13 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                             )
                             break
 
-                    if not all_results[stream_type][source_resolution][
+                    if not all_results["tests"][stream_type][source_resolution][
                         target_resolution
                     ].get("worker_count"):
-                        all_results[stream_type][source_resolution][target_resolution][
+                        all_results["tests"][stream_type][source_resolution][target_resolution][
                             "worker_count"
                         ] = dict()
-                    all_results[stream_type][source_resolution][target_resolution][
+                    all_results["tests"][stream_type][source_resolution][target_resolution][
                         "worker_count"
                     ][workers] = results
                     click.echo(
@@ -494,25 +495,25 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                     click.echo(
                         f">>> Found max streams for {stream_type} {target_text}: {max_streams}; failure reason(s): {failure_reasons}"
                     )
-                    all_results[stream_type][source_resolution][target_resolution][
+                    all_results["tests"][stream_type][source_resolution][target_resolution][
                         "results"
                     ] = dict()
-                    all_results[stream_type][source_resolution][target_resolution][
+                    all_results["tests"][stream_type][source_resolution][target_resolution][
                         "results"
                     ]["max_streams"] = max_streams
-                    all_results[stream_type][source_resolution][target_resolution][
+                    all_results["tests"][stream_type][source_resolution][target_resolution][
                         "results"
                     ]["failure_reasons"] = failure_reasons
-                    all_results[stream_type][source_resolution][target_resolution][
+                    all_results["tests"][stream_type][source_resolution][target_resolution][
                         "results"
                     ]["single_worker_speed"] = single_worker_speed
-                    all_results[stream_type][source_resolution][target_resolution][
+                    all_results["tests"][stream_type][source_resolution][target_resolution][
                         "results"
                     ]["single_worker_rss_kb"] = single_worker_rss_kb
                     sleep(1)
 
             if invalid_results:
-                all_results[stream_type] = {"failure_reasons": failure_reasons}
+                all_results["tests"][stream_type] = {"failure_reasons": failure_reasons}
                 break
 
     return all_results
