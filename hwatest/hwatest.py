@@ -32,19 +32,19 @@ from distro import os_release_info
 
 test_source_files = {
     "2160p-hevc": {
-        "url": "http://www.larmoire.info/jellyfish/media/jellyfish-80-mbps-hd-hevc.mkv",
+        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-80-mbps-hd-hevc.mkv",
         "size": 286,
     },
     "2160p-h264": {
-        "url": "http://www.larmoire.info/jellyfish/media/jellyfish-80-mbps-hd-h264.mkv",
+        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-80-mbps-hd-h264.mkv",
         "size": 285,
     },
     "1080p-hevc": {
-        "url": "http://www.larmoire.info/jellyfish/media/jellyfish-10-mbps-hd-hevc.mkv",
+        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-10-mbps-hd-hevc.mkv",
         "size": 35,
     },
     "1080p-h264": {
-        "url": "http://www.larmoire.info/jellyfish/media/jellyfish-10-mbps-hd-h264.mkv",
+        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-10-mbps-hd-h264.mkv",
         "size": 35,
     },
 }
