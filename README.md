@@ -1,5 +1,9 @@
 # A CPU and Hardware Acceleration (GPU) tester for Jellyfin
 
+<p align="center">
+<a href="https://github.com/psf/black"><img alt="Code style: Black" src="https://img.shields.io/badge/code%20style-black-000000.svg"/></a>
+</p>
+
 HWA Tester (`hwatest`) is a Python 3 CPU and Hardware Acceleration (GPU) tester for Jellyfin.
 
 This program runs a series of standardized tests to determine how video transcoding will perform on your hardware, with the goal being to provide a maximum number of simultaneous streams that can be expected to perform adequately (i.e. at at least 1x realtime transcode speed).
