@@ -627,7 +627,7 @@ def cli(ffmpeg_path, video_path, output_path, gpu_idx, debug_flag):
         click.echo(dumps(results, indent=4))
     else:
         with open(output_path, "w") as fh:
-            dump(fh, results)
+            dump(results, fh)
 
 
 def main():
