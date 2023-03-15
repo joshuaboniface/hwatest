@@ -529,7 +529,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     default="/usr/lib/jellyfin-ffmpeg/ffmpeg",
     show_default=True,
     required=False,
-    help="Path to the Jellyfin FFMpeg binary.",
+    help="Path to the Jellyfin FFmpeg binary.",
 )
 @click.option(
     "--videos",
@@ -572,7 +572,7 @@ def cli(ffmpeg_path, video_path, output_path, gpu_idx, debug_flag):
     This program runs a series of standardized tests to determine how video
     transcoding will perform on your hardware, with the goal being to provide
     a maximum number of simultaneous streams that can be expected to perform
-    adequitely (i.e. at at least 1x realtime transcode speed).
+    adequately (i.e. at at least 1x realtime transcode speed).
 
     It will run through several possible transcoding methods using Jellyfin's
     FFmpeg binary build, including CPU software transcoding, nVidia NVENC,
@@ -580,7 +580,7 @@ def cli(ffmpeg_path, video_path, output_path, gpu_idx, debug_flag):
     along with anonymous system hardware information in a standardized format.
 
     To perform the test, the program will download four standardized test files
-    totaling 641 MB from the Jellyfin mirror (credit to jell.yfish.us for the
+    totalling 641 MB from the Jellyfin mirror (credit to jell.yfish.us for the
     original files and www.larmoire.info for the active mirror we could clone).
     The location of these temporary files is set by the "--videos" option.
 
