@@ -102,14 +102,14 @@ def run_ffmpeg(cmd, pid, is_cpu=False):
                     .strip()
                 )
                 break
-            elif re.search(f" failed -> (.*): (.*)", ffmpeg_stderr):
+            elif re.search(r" failed -> (.*): (.*)", ffmpeg_stderr):
                 failure_reason = (
-                    re.search(f" failed -> (.*): (.*)", ffmpeg_stderr).group(2).strip()
+                    re.search(r" failed -> (.*): (.*)", ffmpeg_stderr).group(2).strip()
                 )
                 break
-            elif re.search(f" failed -> (.*): (.*)", ffmpeg_stderr):
+            elif re.search(r" failed -> (.*): (.*)", ffmpeg_stderr):
                 failure_reason = (
-                    re.search(f" failed!: (.*) \([0-9]+\))", ffmpeg_stderr)
+                    re.search(r" failed!: (.*) \([0-9]+\))", ffmpeg_stderr)
                     .group(1)
                     .strip()
                 )
@@ -159,7 +159,7 @@ def run_ffmpeg(cmd, pid, is_cpu=False):
         results["time_s"] = float(timeline[3].split("=")[-1].replace("s", ""))
         results["rss_kb"] = float(rssline[1].split("=")[-1].replace("kB", ""))
         return (retcode, failure_reason, results)
-    except Exception as e:
+    except Exception:
         return (retcode, failure_reason, None)
 
 
