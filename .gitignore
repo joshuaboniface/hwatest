@@ -2,7 +2,8 @@
 *.tmp
 *.swp
 # Ignore build artifacts
-debian/pvc-*/
+*.egg-info
+build/
 debian/*.log
 debian/*.substvars
 debian/files
