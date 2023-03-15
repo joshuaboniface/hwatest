@@ -11,10 +11,22 @@ from json import dump, dumps, loads
 from time import sleep
 
 test_source_files = {
-    "2160p-hevc": { "url": "http://www.larmoire.info/jellyfish/media/jellyfish-80-mbps-hd-hevc.mkv", "size": 286, },
-    "2160p-h264": { "url": "http://www.larmoire.info/jellyfish/media/jellyfish-80-mbps-hd-h264.mkv", "size": 285, },
-    "1080p-hevc": { "url": "http://www.larmoire.info/jellyfish/media/jellyfish-10-mbps-hd-hevc.mkv", "size": 35, },
-    "1080p-h264": { "url": "http://www.larmoire.info/jellyfish/media/jellyfish-10-mbps-hd-h264.mkv", "size": 35, },
+    "2160p-hevc": {
+        "url": "http://www.larmoire.info/jellyfish/media/jellyfish-80-mbps-hd-hevc.mkv",
+        "size": 286,
+    },
+    "2160p-h264": {
+        "url": "http://www.larmoire.info/jellyfish/media/jellyfish-80-mbps-hd-h264.mkv",
+        "size": 285,
+    },
+    "1080p-hevc": {
+        "url": "http://www.larmoire.info/jellyfish/media/jellyfish-10-mbps-hd-hevc.mkv",
+        "size": 35,
+    },
+    "1080p-h264": {
+        "url": "http://www.larmoire.info/jellyfish/media/jellyfish-10-mbps-hd-h264.mkv",
+        "size": 35,
+    },
 }
 
 ffmpeg_streams = {
@@ -29,12 +41,25 @@ ffmpeg_streams = {
 }
 
 scaling = {
-    '2160p': { "size": "2160", "bitrate": "79616000", "name": "2160p @ 80 Mbps", },
-    '1080p': { "size": "1080", "bitrate": "9616000",  "name": "1080p @ 10 Mbps", },
-    '720p':  { "size": "720",  "bitrate": "3616000",  "name": "720p @ 4 Mbps", },
+    "2160p": {
+        "size": "2160",
+        "bitrate": "79616000",
+        "name": "2160p @ 80 Mbps",
+    },
+    "1080p": {
+        "size": "1080",
+        "bitrate": "9616000",
+        "name": "1080p @ 10 Mbps",
+    },
+    "720p": {
+        "size": "720",
+        "bitrate": "3616000",
+        "name": "720p @ 4 Mbps",
+    },
 }
 
 debug = False
+
 
 def run_ffmpeg(cmd, pid, is_cpu=False):
     # For workers wait 1/100th of a second before starting to ensure the first
@@ -50,7 +75,13 @@ def run_ffmpeg(cmd, pid, is_cpu=False):
     split_cmd = cmd.split()
     # Timeout is 120s as this is 4x the length of the clip (and longer than any reasonable run should take)
     try:
-        output = subprocess.run(split_cmd, stdin=subprocess.PIPE, capture_output=True, universal_newlines=True, timeout=timeout)
+        output = subprocess.run(
+            split_cmd,
+            stdin=subprocess.PIPE,
+            capture_output=True,
+            universal_newlines=True,
+            timeout=timeout,
+        )
         retcode = output.returncode
         ffmpeg_stderr = output.stderr
     except subprocess.TimeoutExpired:
@@ -64,17 +95,29 @@ def run_ffmpeg(cmd, pid, is_cpu=False):
         # Figure out why we failed based on the ffmpeg output, the first error
         # found is canonical
         for line in ffmpeg_stderr:
-            if re.search(r' failed: (.*)\([0-9]+\)', ffmpeg_stderr):
-                failure_reason = re.search(r' failed: (.*)\([0-9]+\)', ffmpeg_stderr).group(1).strip()
+            if re.search(r" failed: (.*)\([0-9]+\)", ffmpeg_stderr):
+                failure_reason = (
+                    re.search(r" failed: (.*)\([0-9]+\)", ffmpeg_stderr)
+                    .group(1)
+                    .strip()
+                )
                 break
-            elif re.search(f' failed -> (.*): (.*)', ffmpeg_stderr):
-                failure_reason = re.search(f' failed -> (.*): (.*)', ffmpeg_stderr).group(2).strip()
+            elif re.search(f" failed -> (.*): (.*)", ffmpeg_stderr):
+                failure_reason = (
+                    re.search(f" failed -> (.*): (.*)", ffmpeg_stderr).group(2).strip()
+                )
                 break
-            elif re.search(f' failed -> (.*): (.*)', ffmpeg_stderr):
-                failure_reason = re.search(f' failed!: (.*) \([0-9]+\))', ffmpeg_stderr).group(1).strip()
+            elif re.search(f" failed -> (.*): (.*)", ffmpeg_stderr):
+                failure_reason = (
+                    re.search(f" failed!: (.*) \([0-9]+\))", ffmpeg_stderr)
+                    .group(1)
+                    .strip()
+                )
                 break
-            elif re.search(r'^Error (.*)', ffmpeg_stderr):
-                failure_reason = re.search(r'^Error (.*)', ffmpeg_stderr).group(1).strip()
+            elif re.search(r"^Error (.*)", ffmpeg_stderr):
+                failure_reason = (
+                    re.search(r"^Error (.*)", ffmpeg_stderr).group(1).strip()
+                )
                 break
         # If we can't find a good reason, it's just a generic failure
         if failure_reason is None:
@@ -83,39 +126,42 @@ def run_ffmpeg(cmd, pid, is_cpu=False):
     results = dict()
 
     time_s = 0.0
-    for line in ffmpeg_stderr.split('\n'):
-        if re.match(r'^bench: utime', line):
+    for line in ffmpeg_stderr.split("\n"):
+        if re.match(r"^bench: utime", line):
             timeline = line.split()
-            time_s = float(timeline[3].split('=')[-1].replace('s', ''))
+            time_s = float(timeline[3].split("=")[-1].replace("s", ""))
 
     if debug:
-        click.echo(f">>>>> Worker {pid:02}: retcode: {retcode}, time: {time_s:.2f}s, failure reason: {failure_reason}")
+        click.echo(
+            f">>>>> Worker {pid:02}: retcode: {retcode}, time: {time_s:.2f}s, failure reason: {failure_reason}"
+        )
 
     if pid > 1:
         return (retcode, failure_reason, None)
 
-    for line in ffmpeg_stderr.split('\n'):
-        if re.match(r'^frame=', line):
+    for line in ffmpeg_stderr.split("\n"):
+        if re.match(r"^frame=", line):
             # We want to find the speed from the first frame after 500 out of 900
-            if re.match(r'frame=\s*[5-9][0-9]+[0-9]+', line):
+            if re.match(r"frame=\s*[5-9][0-9]+[0-9]+", line):
                 line = re.sub(r"=\s*", "=", line)
                 frameline = line.split()
                 break
 
-    for line in ffmpeg_stderr.split('\n'):
-        if re.match(r'^bench: utime', line):
+    for line in ffmpeg_stderr.split("\n"):
+        if re.match(r"^bench: utime", line):
             timeline = line.split()
-        if re.match(r'^bench: maxrss', line):
+        if re.match(r"^bench: maxrss", line):
             rssline = line.split()
 
     try:
-        results["frame"] = int(frameline[0].split('=')[-1])
-        results["speed"] = float(frameline[6].split('=')[-1].replace('x', ''))
-        results["time_s"] = float(timeline[3].split('=')[-1].replace('s', ''))
-        results["rss_kb"] = float(rssline[1].split('=')[-1].replace('kB', ''))
+        results["frame"] = int(frameline[0].split("=")[-1])
+        results["speed"] = float(frameline[6].split("=")[-1].replace("x", ""))
+        results["time_s"] = float(timeline[3].split("=")[-1].replace("s", ""))
+        results["rss_kb"] = float(rssline[1].split("=")[-1].replace("kB", ""))
         return (retcode, failure_reason, results)
     except Exception as e:
         return (retcode, failure_reason, None)
+
 
 def do_benchmark(ffmpeg, video_path, video_file, stream, scale, workers, gpu):
     stream_cmd = ffmpeg_streams[stream].format(
@@ -124,21 +170,20 @@ def do_benchmark(ffmpeg, video_path, video_file, stream, scale, workers, gpu):
         video_file=video_file,
         scale=scaling[scale]["size"],
         bitrate=scaling[scale]["bitrate"],
-        gpu=gpu["businfo"].replace('@', '-'),
+        gpu=gpu["businfo"].replace("@", "-"),
     )
 
-    if re.match(r'^cpu-', stream):
+    if re.match(r"^cpu-", stream):
         is_cpu = True
     else:
         is_cpu = False
 
     results = None
     total_rets = 0
-    with concurrent.futures.ProcessPoolExecutor(max_workers=workers+1) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers + 1) as executor:
         future_to_results = {
-            executor.submit(
-                run_ffmpeg, stream_cmd, i, is_cpu
-            ): i for i in range(1, workers + 1, 1)
+            executor.submit(run_ffmpeg, stream_cmd, i, is_cpu): i
+            for i in range(1, workers + 1, 1)
         }
 
         had_failure = False
@@ -162,37 +207,37 @@ def do_benchmark(ffmpeg, video_path, video_file, stream, scale, workers, gpu):
     else:
         return (0, failure_reasons, results)
 
+
 def get_hwinfo(all_results):
-    all_results['hwinfo'] = dict()
+    all_results["hwinfo"] = dict()
 
     # Get our information using lshw because it is the most sensible output
-    cpu_output = subprocess.run([
-           "lshw",
-            "-json",
-            "-class",
-            "cpu"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    cpu_output = subprocess.run(
+        ["lshw", "-json", "-class", "cpu"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     if cpu_output.returncode > 0:
-        click.echo("Could not run 'lshw'! The 'lshw' program is needed to gather required system information. Please install it and try again.")
+        click.echo(
+            "Could not run 'lshw'! The 'lshw' program is needed to gather required system information. Please install it and try again."
+        )
         exit(1)
     cpu_information = loads(cpu_output.stdout.decode())
-    all_results['hwinfo']['cpu'] = cpu_information
+    all_results["hwinfo"]["cpu"] = cpu_information
 
-    memory_output = subprocess.run([
-           "lshw",
-            "-json",
-            "-class",
-            "memory"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    memory_output = subprocess.run(
+        ["lshw", "-json", "-class", "memory"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     memory_information = loads(memory_output.stdout.decode())
-    all_results['hwinfo']['memory'] = memory_information
+    all_results["hwinfo"]["memory"] = memory_information
 
-    gpu_output = subprocess.run([
-           "lshw",
-            "-json",
-            "-class",
-            "display"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    gpu_output = subprocess.run(
+        ["lshw", "-json", "-class", "display"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     gpu_information = loads(gpu_output.stdout.decode())
     # Discard any GPUs we don't recognize (i.e. not NVIDIA, AMD, or Intel)
     for element in gpu_information.copy():
@@ -203,9 +248,10 @@ def get_hwinfo(all_results):
         ]:
             gpu_information.remove(element)
 
-    all_results['hwinfo']['gpu'] = gpu_information
+    all_results["hwinfo"]["gpu"] = gpu_information
 
     return all_results
+
 
 def benchmark(ffmpeg, video_path, gpu_idx):
     video_files = list()
@@ -215,22 +261,32 @@ def benchmark(ffmpeg, video_path, gpu_idx):
 
     if len(all_results["hwinfo"]["gpu"]) > 1:
         if gpu_idx is None:
-            click.echo('Warning! Your system has more than one viable GPU and we cannot test multiple GPUs simultaneously.')
-            click.echo('Please re-run the test specifying the desired GPU index number with the "--gpu" option.')
+            click.echo(
+                "Warning! Your system has more than one viable GPU and we cannot test multiple GPUs simultaneously."
+            )
+            click.echo(
+                'Please re-run the test specifying the desired GPU index number with the "--gpu" option.'
+            )
             click.echo()
             click.echo("Found GPUs:")
             for idx, gpu in enumerate(all_results["hwinfo"]["gpu"]):
-                click.echo(f"  {idx}: {gpu['vendor']} {gpu['product']} bus ID {gpu['businfo']}")
+                click.echo(
+                    f"  {idx}: {gpu['vendor']} {gpu['product']} bus ID {gpu['businfo']}"
+                )
             exit(1)
         else:
             try:
                 gpu = all_results["hwinfo"]["gpu"][gpu_idx]
             except Exception:
-                click.echo('Invalid GPU index selected. Please re-run the test with the correct "--gpu" option.')
+                click.echo(
+                    'Invalid GPU index selected. Please re-run the test with the correct "--gpu" option.'
+                )
                 click.echo()
                 click.echo("Found GPUs:")
                 for idx, gpu in enumerate(all_results["hwinfo"]["gpu"]):
-                    click.echo(f"  {idx}: {gpu['vendor']} {gpu['product']} bus ID {gpu['businfo']}")
+                    click.echo(
+                        f"  {idx}: {gpu['vendor']} {gpu['product']} bus ID {gpu['businfo']}"
+                    )
                 exit(1)
     else:
         gpu = all_results["hwinfo"]["gpu"][0]
@@ -240,25 +296,34 @@ def benchmark(ffmpeg, video_path, gpu_idx):
 
     for video in test_source_files.values():
         video_url = video["url"]
-        video_filename = video_url.split('/')[-1]
+        video_filename = video_url.split("/")[-1]
         video_filesize = video["size"]
         if not os.path.exists(f"{video_path}/{video_filename}"):
             click.echo(f'File not found: "{video_path}/{video_filename}"')
             file_invalid = True
         else:
-            actual_filesize = int(os.stat(f"{video_path}/{video_filename}").st_size/(1024*1024))
+            actual_filesize = int(
+                os.stat(f"{video_path}/{video_filename}").st_size / (1024 * 1024)
+            )
             if actual_filesize != video_filesize:
-                click.echo(f'File "{video_path}/{video_filename}" size is invalid: {actual_filesize} not {video_filesize}')
+                click.echo(
+                    f'File "{video_path}/{video_filename}" size is invalid: {actual_filesize} not {video_filesize}'
+                )
                 file_invalid = True
             else:
                 file_invalid = False
 
         if file_invalid:
-            click.echo(f'Downloading "{video_filename}" ({video_filesize}M) to "{video_path}"... ', nl="")
+            click.echo(
+                f'Downloading "{video_filename}" ({video_filesize}M) to "{video_path}"... ',
+                nl="",
+            )
             urllib.request.urlretrieve(video_url, f"{video_path}/{video_filename}")
             click.echo("done.")
         else:
-            click.echo(f'Found valid test file "{video_path}/{video_filename}" ({video_filesize}M).')
+            click.echo(
+                f'Found valid test file "{video_path}/{video_filename}" ({video_filesize}M).'
+            )
 
         video_files.append(video_filename)
 
@@ -268,15 +333,20 @@ def benchmark(ffmpeg, video_path, gpu_idx):
         invalid_results = False
 
         stream_type = stream[0]
-        stream_method = stream_type.split('-')[0]
-        stream_encode = stream_type.split('-')[1]
+        stream_method = stream_type.split("-")[0]
+        stream_encode = stream_type.split("-")[1]
 
         supported_vendors = list()
         for gpu in all_results["hwinfo"]["gpu"]:
             supported_vendors.append(gpu["vendor"])
-        if (stream_method == "nvenc" and "NVIDIA Corporation" not in supported_vendors) \
-                or (stream_method == "vaapi" and "Advanced Micro Devices, Inc. [AMD/ATI]" not in supported_vendors) \
-                or (stream_method == "qsv" and "Intel Corporation" not in supported_vendors):
+        if (
+            (stream_method == "nvenc" and "NVIDIA Corporation" not in supported_vendors)
+            or (
+                stream_method == "vaapi"
+                and "Advanced Micro Devices, Inc. [AMD/ATI]" not in supported_vendors
+            )
+            or (stream_method == "qsv" and "Intel Corporation" not in supported_vendors)
+        ):
             all_results[stream_type] = None
             continue
 
@@ -284,10 +354,10 @@ def benchmark(ffmpeg, video_path, gpu_idx):
         click.echo(f"> Running {stream_type} encoder tests")
 
         for test_source in test_source_files.items():
-            source_filename = test_source[1]["url"].split('/')[-1]
+            source_filename = test_source[1]["url"].split("/")[-1]
             source = test_source[0]
-            source_encode = source.split('-')[1]
-            source_resolution = source.split('-')[0]
+            source_encode = source.split("-")[1]
+            source_resolution = source.split("-")[0]
             if stream_encode != source_encode:
                 continue
 
@@ -297,12 +367,14 @@ def benchmark(ffmpeg, video_path, gpu_idx):
             for scale in scaling.items():
                 target_resolution = scale[0]
                 target_scale_name = scale[1]["name"]
-                if int(target_resolution.replace('p', '')) > int(source_resolution.replace('p', '')):
+                if int(target_resolution.replace("p", "")) > int(
+                    source_resolution.replace("p", "")
+                ):
                     continue
 
                 all_results[stream_type][source_resolution][target_resolution] = dict()
                 target_text = f"{source_resolution} -> {target_scale_name}"
-                click.echo(f'>>> Running {target_text} tests')
+                click.echo(f">>> Running {target_text} tests")
 
                 workers = 1
                 max_streams = 0
@@ -311,29 +383,53 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                 single_worker_speed = None
                 single_worker_rss_kb = 0.0
                 while results["speed"] > 1:
-                    click.echo(f">>>> Running test with {workers} simultaneous stream(s)...")
-                    code, failure_reasons, results = do_benchmark(ffmpeg, video_path, source_filename, stream_type, target_resolution, workers, gpu)
-    
+                    click.echo(
+                        f">>>> Running test with {workers} simultaneous stream(s)..."
+                    )
+                    code, failure_reasons, results = do_benchmark(
+                        ffmpeg,
+                        video_path,
+                        source_filename,
+                        stream_type,
+                        target_resolution,
+                        workers,
+                        gpu,
+                    )
+
                     if code > 0 and workers == 1:
-                        click.echo(f">>>> First worker failed (failure reason(s): {', '.join(failure_reasons)}) with one worker, aborting further tests with this stream type")
+                        click.echo(
+                            f">>>> First worker failed (failure reason(s): {', '.join(failure_reasons)}) with one worker, aborting further tests with this stream type"
+                        )
                         invalid_results = True
                         break
                     elif code > 0:
                         if workers > max_streams + 1:
-                            click.echo(f">>>> More than one worker failed (failure reason(s): {', '.join(failure_reasons)}) with a large worker delta, scaling back and retrying")
+                            click.echo(
+                                f">>>> More than one worker failed (failure reason(s): {', '.join(failure_reasons)}) with a large worker delta, scaling back and retrying"
+                            )
                             workers -= int((workers - max_streams) / 2)
                             results = {"speed": 2.0}
                             scaleback = True
                             sleep(1)
                             continue
                         else:
-                            click.echo(f">>>> More than one worker failed (failure reason(s): {'. '.join(failure_reasons)}) with a small worker delta, aborting further tests at this encoding")
+                            click.echo(
+                                f">>>> More than one worker failed (failure reason(s): {'. '.join(failure_reasons)}) with a small worker delta, aborting further tests at this encoding"
+                            )
                             break
-    
-                    if not all_results[stream_type][source_resolution][target_resolution].get("worker_count"):
-                        all_results[stream_type][source_resolution][target_resolution]["worker_count"] = dict()
-                    all_results[stream_type][source_resolution][target_resolution]["worker_count"][workers] = results
-                    click.echo(f">>>> First worker speed: {results['speed']}x @ frame {results['frame']}, total time {results['time_s']}s")
+
+                    if not all_results[stream_type][source_resolution][
+                        target_resolution
+                    ].get("worker_count"):
+                        all_results[stream_type][source_resolution][target_resolution][
+                            "worker_count"
+                        ] = dict()
+                    all_results[stream_type][source_resolution][target_resolution][
+                        "worker_count"
+                    ][workers] = results
+                    click.echo(
+                        f">>>> First worker speed: {results['speed']}x @ frame {results['frame']}, total time {results['time_s']}s"
+                    )
                     if workers == 1:
                         single_worker_speed = results["speed"]
                         single_worker_rss_kb = results["rss_kb"]
@@ -358,22 +454,35 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                 else:
                     if not failure_reasons:
                         failure_reasons = ["performance"]
-                    click.echo(f">>> Found max streams for {stream_type} {target_text}: {max_streams}; failure reason(s): {failure_reasons}")
-                    all_results[stream_type][source_resolution][target_resolution]["results"] = dict()
-                    all_results[stream_type][source_resolution][target_resolution]["results"]["max_streams"] = max_streams
-                    all_results[stream_type][source_resolution][target_resolution]["results"]["failure_reasons"] = failure_reasons
-                    all_results[stream_type][source_resolution][target_resolution]["results"]["single_worker_speed"] = single_worker_speed
-                    all_results[stream_type][source_resolution][target_resolution]["results"]["single_worker_rss_kb"] = single_worker_rss_kb
+                    click.echo(
+                        f">>> Found max streams for {stream_type} {target_text}: {max_streams}; failure reason(s): {failure_reasons}"
+                    )
+                    all_results[stream_type][source_resolution][target_resolution][
+                        "results"
+                    ] = dict()
+                    all_results[stream_type][source_resolution][target_resolution][
+                        "results"
+                    ]["max_streams"] = max_streams
+                    all_results[stream_type][source_resolution][target_resolution][
+                        "results"
+                    ]["failure_reasons"] = failure_reasons
+                    all_results[stream_type][source_resolution][target_resolution][
+                        "results"
+                    ]["single_worker_speed"] = single_worker_speed
+                    all_results[stream_type][source_resolution][target_resolution][
+                        "results"
+                    ]["single_worker_rss_kb"] = single_worker_rss_kb
                     sleep(1)
 
             if invalid_results:
-                all_results[stream_type] = { "failure_reasons": failure_reasons }
+                all_results[stream_type] = {"failure_reasons": failure_reasons}
                 break
 
     return all_results
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=120)
+
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
@@ -383,7 +492,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     default="/usr/lib/jellyfin-ffmpeg/ffmpeg",
     show_default=True,
     required=False,
-    help="Path to the Jellyfin FFMpeg binary."
+    help="Path to the Jellyfin FFMpeg binary.",
 )
 @click.option(
     "--videos",
@@ -392,7 +501,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     default="~/hwatest",
     show_default=True,
     required=True,
-    help="Directory to store temporary video files."
+    help="Directory to store temporary video files.",
 )
 @click.option(
     "--output",
@@ -401,7 +510,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     default="-",
     show_default=True,
     required=False,
-    help="Path to the output JSON file ('-' for stdout)."
+    help="Path to the output JSON file ('-' for stdout).",
 )
 @click.option(
     "--gpu",
@@ -410,14 +519,14 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     default=None,
     show_default=True,
     required=False,
-    help="The specific GPU to test in a multi-GPU system."
+    help="The specific GPU to test in a multi-GPU system.",
 )
 @click.option(
     "--debug",
     "debug_flag",
     is_flag=True,
     default=False,
-    help="Enable additional debug output."
+    help="Enable additional debug output.",
 )
 def cli(ffmpeg_path, video_path, output_path, gpu_idx, debug_flag):
     """
@@ -484,6 +593,7 @@ def cli(ffmpeg_path, video_path, output_path, gpu_idx, debug_flag):
 
 def main():
     return cli(obj={})
+
 
 if __name__ == "__main__":
     main()
