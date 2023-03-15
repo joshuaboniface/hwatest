@@ -228,17 +228,33 @@ def do_benchmark(ffmpeg, video_path, video_file, stream, scale, workers, gpu):
         return (0, failure_reasons, results)
 
 
-def get_hwinfo(all_results):
+def get_hwinfo(all_results, ffmpeg):
     all_results["hwinfo"] = dict()
 
     # Get our OS information from the distro library
     all_results["hwinfo"]["os"] = os_release_info()
 
+    # Get our FFmpeg information
+    ffmpeg_output = subprocess.run(
+        [ffmpeg, "-version"],
+        capture_output=True,
+    )
+    if ffmpeg_output.returncode > 0:
+        click.echo(
+            "Could not run 'ffmpeg'! Ensure you specified a valid Jellyfin FFmpeg path and try again."
+        )
+        exit(1)
+    ffmpeg_information = ffmpeg_output.stdout.decode().split("\n")
+    all_results["hwinfo"]["ffmpeg"] = dict()
+    all_results["hwinfo"]["ffmpeg"]["path"] = ffmpeg
+    all_results["hwinfo"]["ffmpeg"]["version"] = re.match(
+        r"ffmpeg version (.*) Copyright", ffmpeg_information[0]
+    ).group(1)
+
     # Get our information using lshw because it is the most sensible output
     cpu_output = subprocess.run(
         ["lshw", "-json", "-class", "cpu"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     if cpu_output.returncode > 0:
         click.echo(
@@ -250,16 +266,14 @@ def get_hwinfo(all_results):
 
     memory_output = subprocess.run(
         ["lshw", "-json", "-class", "memory"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     memory_information = loads(memory_output.stdout.decode())
     all_results["hwinfo"]["memory"] = memory_information
 
     gpu_output = subprocess.run(
         ["lshw", "-json", "-class", "display"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     gpu_information = loads(gpu_output.stdout.decode())
     # Discard any GPUs we don't recognize (i.e. not NVIDIA, AMD, or Intel)
@@ -280,7 +294,7 @@ def benchmark(ffmpeg, video_path, gpu_idx):
     video_files = list()
 
     all_results = dict()
-    all_results = get_hwinfo(all_results)
+    all_results = get_hwinfo(all_results, ffmpeg)
 
     if len(all_results["hwinfo"]["gpu"]) > 1:
         if gpu_idx is None:
