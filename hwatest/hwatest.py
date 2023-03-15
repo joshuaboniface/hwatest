@@ -620,6 +620,8 @@ def cli(ffmpeg_path, video_path, output_path, gpu_idx, debug_flag):
 
     results = benchmark(ffmpeg_path, video_path, gpu_idx)
 
+    click.echo()
+    click.echo("Benchmark finished, outputting results...")
     if output_path == "-":
         click.echo()
         click.echo(dumps(results, indent=4))
