@@ -6,7 +6,7 @@
 ignore = W605, W503, E501
 extend-ignore = E203
 # We exclude the Debian configuration
-exclude = debian
+exclude = debian,build
 # Set the max line length to 88 for Black
 max-line-length = 88
 
