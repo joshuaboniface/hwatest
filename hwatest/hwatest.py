@@ -567,7 +567,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
 )
 def cli(ffmpeg_path, video_path, output_path, gpu_idx, debug_flag):
     """
-    HWA Tester for Jellyfin
+    A CPU and Hardware Acceleration (GPU) tester for Jellyfin
 
     This program runs a series of standardized tests to determine how video
     transcoding will perform on your hardware, with the goal being to provide
