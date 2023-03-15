@@ -1,6 +1,7 @@
 # A CPU and Hardware Acceleration (GPU) tester for Jellyfin
 
 <p align="center">
+<a href="https://github.com/joshuaboniface/hwatest"><img alt="License" src="https://img.shields.io/github/license/joshuaboniface/hwatest"/></a>
 <a href="https://github.com/psf/black"><img alt="Code style: Black" src="https://img.shields.io/badge/code%20style-black-000000.svg"/></a>
 </p>
 
