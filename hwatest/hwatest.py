@@ -32,20 +32,20 @@ from distro import os_release_info
 
 test_source_files = {
     "2160p-hevc": {
-        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-80-mbps-hd-hevc.mkv",
-        "size": 286,
+        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-120-mbps-4k-uhd-hevc-10bit.mkv",
+        "size": 429,
     },
     "2160p-h264": {
-        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-80-mbps-hd-h264.mkv",
-        "size": 285,
+        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-120-mbps-4k-uhd-h264.mkv",
+        "size": 431,
     },
     "1080p-hevc": {
-        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-10-mbps-hd-hevc.mkv",
-        "size": 35,
+        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-40-mbps-hd-hevc-10bit.mkv",
+        "size": 143,
     },
     "1080p-h264": {
-        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-10-mbps-hd-h264.mkv",
-        "size": 35,
+        "url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-40-mbps-hd-h264.mkv",
+        "size": 142,
     },
 }
 
@@ -344,7 +344,7 @@ def benchmark(ffmpeg, video_path, gpu_idx):
             )
             if actual_filesize != video_filesize:
                 click.echo(
-                    f'File "{video_path}/{video_filename}" size is invalid: {actual_filesize} not {video_filesize}'
+                    f'File "{video_path}/{video_filename}" size is invalid: {actual_filesize}MB not {video_filesize}MB'
                 )
                 file_invalid = True
             else:
@@ -352,7 +352,7 @@ def benchmark(ffmpeg, video_path, gpu_idx):
 
         if file_invalid:
             click.echo(
-                f'Downloading "{video_filename}" ({video_filesize}M) to "{video_path}"... ',
+                f'Downloading "{video_filename}" ({video_filesize}MB) to "{video_path}"... ',
                 nl="",
             )
             urllib.request.urlretrieve(video_url, f"{video_path}/{video_filename}")
@@ -581,7 +581,7 @@ def cli(ffmpeg_path, video_path, output_path, gpu_idx, debug_flag):
     along with anonymous system hardware information in a standardized format.
 
     To perform the test, the program will download four standardized test files
-    totalling 641 MB from the Jellyfin mirror (credit to jell.yfish.us for the
+    totalling 1145 MB from the Jellyfin mirror (credit to jell.yfish.us for the
     original files and www.larmoire.info for the active mirror we could clone).
     The location of these temporary files is set by the "--videos" option.
 
