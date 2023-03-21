@@ -109,6 +109,11 @@ def run_ffmpeg(cmd, pid, is_cpu=False):
         retcode = 255
         ffmpeg_stderr = ""
         failure_reason = "timeout/stuck"
+    except Exception:
+        output = None
+        retcode = 255
+        ffmpeg_stderr = ""
+        failure_reason = "generic failure"
 
     failure_reason = None
     if retcode > 0 and retcode < 255:
