@@ -195,7 +195,7 @@ def do_benchmark(ffmpeg, video_path, video_file, stream, scale, workers, gpu):
         video_file=video_file,
         scale=scaling[scale]["size"],
         bitrate=scaling[scale]["bitrate"],
-        gpu=gpu["businfo"].replace("@", "-"),
+        gpu=gpu,
     )
 
     if re.match(r"^cpu-", stream):
@@ -330,8 +330,19 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                         f"  {idx}: {gpu['vendor']} {gpu['product']} bus ID {gpu['businfo']}"
                     )
                 exit(1)
+
+        # Handle nVidia multi-card, which needs a sequential ID instead of a bus ID; pass this as an idx to benchmark
+        if gpu["vendor"] == "NVIDIA Corporation":
+            gpu_arg = [g for g in all_results["hwinfo"]["gpu"] if g["vendor"] == "NVIDIA Corporation"].index(gpu)
+        else:
+            gpu_arg = gpu["businfo"].replace("@", "-")
+
     else:
         gpu = all_results["hwinfo"]["gpu"][0]
+        if gpu["vendor"] == "NVIDIA Corporation":
+            gpu_arg = 0
+        else:
+            gpu_arg = gpu["businfo"].replace("@", "-")
 
     click.echo(f'''Using GPU "{gpu['vendor']} {gpu['product']}"''')
     click.echo()
@@ -436,7 +447,7 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                         stream_type,
                         target_resolution,
                         workers,
-                        gpu,
+                        gpu_arg,
                     )
 
                     if code > 0 and workers == 1:
