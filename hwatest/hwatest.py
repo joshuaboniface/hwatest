@@ -109,11 +109,11 @@ def run_ffmpeg(cmd, pid, is_cpu=False):
         retcode = 255
         ffmpeg_stderr = ""
         failure_reason = "timeout/stuck"
-    except Exception:
+    except Exception as e:
         output = None
         retcode = 255
         ffmpeg_stderr = ""
-        failure_reason = "generic failure"
+        failure_reason = f"generic failure {e}"
 
     failure_reason = None
     if retcode > 0 and retcode < 255:
@@ -257,15 +257,19 @@ def get_hwinfo(all_results, ffmpeg):
     ).group(1)
 
     # Get our information using lshw because it is the most sensible output
-    cpu_output = subprocess.run(
-        ["lshw", "-json", "-class", "cpu"],
-        capture_output=True,
-    )
-    if cpu_output.returncode > 0:
+    try:
+        cpu_output = subprocess.run(
+            ["lshw", "-json", "-class", "cpu"],
+            capture_output=True,
+        )
+        if cpu_output.returncode > 0:
+            raise
+    except Exception:
         click.echo(
             "Could not run 'lshw'! The 'lshw' program is needed to gather required system information. Please install it and try again."
         )
         exit(1)
+
     cpu_information = loads(cpu_output.stdout.decode())
     all_results["hwinfo"]["cpu"] = cpu_information
 
