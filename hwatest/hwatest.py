@@ -348,6 +348,8 @@ def benchmark(ffmpeg, video_path, gpu_idx):
         else:
             gpu_arg = gpu["businfo"].replace("@", "-")
 
+    all_results["hwinfo"]["selected_gpu"] = gpu_idx
+
     click.echo(f'''Using GPU "{gpu['vendor']} {gpu['product']}"''')
     click.echo()
 
