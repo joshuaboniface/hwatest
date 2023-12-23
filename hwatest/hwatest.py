@@ -337,7 +337,11 @@ def benchmark(ffmpeg, video_path, gpu_idx):
 
         # Handle nVidia multi-card, which needs a sequential ID instead of a bus ID; pass this as an idx to benchmark
         if gpu["vendor"] == "NVIDIA Corporation":
-            gpu_arg = [g for g in all_results["hwinfo"]["gpu"] if g["vendor"] == "NVIDIA Corporation"].index(gpu)
+            gpu_arg = [
+                g
+                for g in all_results["hwinfo"]["gpu"]
+                if g["vendor"] == "NVIDIA Corporation"
+            ].index(gpu)
         else:
             gpu_arg = gpu["businfo"].replace("@", "-")
 
@@ -388,9 +392,11 @@ def benchmark(ffmpeg, video_path, gpu_idx):
 
     click.echo()
 
-    all_results["tests"] = dict()
+    all_results["tests"] = list()
     for stream in ffmpeg_streams.items():
         invalid_results = False
+
+        test_result = dict()
 
         stream_type = stream[0]
         stream_method = stream_type.split("-")[0]
@@ -407,10 +413,11 @@ def benchmark(ffmpeg, video_path, gpu_idx):
             )
             or (stream_method == "qsv" and "Intel Corporation" not in supported_vendors)
         ):
-            all_results["tests"][stream_type] = None
             continue
 
-        all_results["tests"][stream_type] = dict()
+        test_result["codec"] = stream_type
+        test_result["resolutions"] = list()
+
         click.echo(f"> Running {stream_type} encoder tests")
 
         for test_source in test_source_files.items():
@@ -421,9 +428,6 @@ def benchmark(ffmpeg, video_path, gpu_idx):
             if stream_encode != source_encode:
                 continue
 
-            all_results["tests"][stream_type][source_resolution] = dict()
-            click.echo(f'>> Running tests with source file "{source_filename}"')
-
             for scale in scaling.items():
                 target_resolution = scale[0]
                 target_scale_name = scale[1]["name"]
@@ -432,7 +436,13 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                 ):
                     continue
 
-                all_results["tests"][stream_type][source_resolution][target_resolution] = dict()
+                resmap_result = {
+                    "scale_from": source_resolution,
+                    "scale_to": target_resolution,
+                    "runs": list(),
+                    "results": dict(),
+                }
+
                 target_text = f"{source_resolution} -> {target_scale_name}"
                 click.echo(f">>> Running {target_text} tests")
 
@@ -478,21 +488,22 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                             )
                             break
 
-                    if not all_results["tests"][stream_type][source_resolution][
-                        target_resolution
-                    ].get("worker_count"):
-                        all_results["tests"][stream_type][source_resolution][target_resolution][
-                            "worker_count"
-                        ] = dict()
-                    all_results["tests"][stream_type][source_resolution][target_resolution][
-                        "worker_count"
-                    ][workers] = results
                     click.echo(
                         f">>>> First worker speed: {results['speed']}x @ frame {results['frame']}, total time {results['time_s']}s"
                     )
+
                     if workers == 1:
                         single_worker_speed = results["speed"]
                         single_worker_rss_kb = results["rss_kb"]
+
+                    run_result = {
+                        "workers": workers,
+                        "frame": results["frame"],
+                        "speed": results["speed"],
+                        "time_s": results["time_s"],
+                        "rss_kb": results["rss_kb"],
+                    }
+                    resmap_result["runs"].append(run_result)
 
                     if results["speed"] >= 4 and not scaleback:
                         max_streams = workers
@@ -517,26 +528,22 @@ def benchmark(ffmpeg, video_path, gpu_idx):
                     click.echo(
                         f">>> Found max streams for {stream_type} {target_text}: {max_streams}; failure reason(s): {failure_reasons}"
                     )
-                    all_results["tests"][stream_type][source_resolution][target_resolution][
-                        "results"
-                    ] = dict()
-                    all_results["tests"][stream_type][source_resolution][target_resolution][
-                        "results"
-                    ]["max_streams"] = max_streams
-                    all_results["tests"][stream_type][source_resolution][target_resolution][
-                        "results"
-                    ]["failure_reasons"] = failure_reasons
-                    all_results["tests"][stream_type][source_resolution][target_resolution][
-                        "results"
-                    ]["single_worker_speed"] = single_worker_speed
-                    all_results["tests"][stream_type][source_resolution][target_resolution][
-                        "results"
-                    ]["single_worker_rss_kb"] = single_worker_rss_kb
+
+                    resmap_result["results"]["max_streams"] = max_streams
+                    resmap_result["results"]["failure_reasons"] = failure_reasons
+                    resmap_result["results"]["single_worker_speed"] = single_worker_speed
+                    resmap_result["results"][
+                        "single_worker_rss_kb"
+                    ] = single_worker_rss_kb
+
+                    test_result["resolutions"].append(resmap_result)
+
                     sleep(1)
 
             if invalid_results:
-                all_results["tests"][stream_type] = {"failure_reasons": failure_reasons}
                 break
+
+        all_results["tests"].append(test_result)
 
     return all_results
 
