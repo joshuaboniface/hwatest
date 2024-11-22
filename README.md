@@ -1,3 +1,9 @@
+# DEPRECATED
+
+This tool was a first draft of a HWA testing tool, but has been superceded by others.
+
+Please see https://github.com/BotBlake/pyTAB for the current work-in-progress client solution.
+
 # A CPU and Hardware Acceleration (GPU) tester for Jellyfin
 
 <p align="center">
